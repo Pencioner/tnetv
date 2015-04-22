@@ -53,7 +53,7 @@ class EventManager {
         }
         // return the index so the observer can be unsubscribed
         $observers = & $this->getEventObservers($eventName);
-        return array_push($observers, $callback);
+        return -1 + array_push($observers, $callback);
     }
 
     public function unsubscribeObserver($eventName, $index) {

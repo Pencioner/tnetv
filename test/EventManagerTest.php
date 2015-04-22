@@ -63,14 +63,21 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
         $this->assertNull($observers);
     }
 
+    protected static $someValue;
     public function testSubscribeObserver() {
+        EventManager::getInstance()->registerEvent("test");
+        $index = EventManager::getInstance()->subscribeObserver("test", function($val) { static::$someValue = $val; });
+        $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
+        $this->assertNotEmpty($observers);
+        $this->assertInstanceOf('Closure', $observers[$index]);
+    }
+
+    public function testTriggerEvent() {
     }
 
     public function testUnsubscribeObserver() {
     }
 
-    public function testTriggerEvent() {
-    }
 }
 
 ?>
