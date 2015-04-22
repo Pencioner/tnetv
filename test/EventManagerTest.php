@@ -12,12 +12,6 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
         return static::$reflection;
     }
 
-    protected function getProperty($propName) {
-        $property = $this->getReflection()->getProperty($propName);
-        $property->setAccessible(true);
-        return $property;
-    }
-
     protected function reflectionGetMethod($methodName) {
         $method = $this->getReflection()->getMethod($methodName);
         $method->setAccessible(true);
@@ -44,6 +38,7 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testHaveEmptyEventsListAtStart() {
+        $this->assertNotNull(PHPUnit_Framework_Assert::readAttribute(EventManager::getInstance(), "events"));
         $this->assertEmpty(PHPUnit_Framework_Assert::readAttribute(EventManager::getInstance(), "events"));
     }
 
@@ -64,20 +59,55 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
     }
 
     protected static $someValue;
+    protected static $someStrlen;
+    protected static $observerIdxVal;
+    protected static $observerIdxLen;
     public function testSubscribeObserver() {
         EventManager::getInstance()->registerEvent("test");
-        $index = EventManager::getInstance()->subscribeObserver("test", function($val) { static::$someValue = $val; });
+        static::$observerIdxVal = EventManager::getInstance()->subscribeObserver(
+            "test",
+            function($val) { static::$someValue = $val; return $val; }
+        );
         $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
         $this->assertNotEmpty($observers);
-        $this->assertInstanceOf('Closure', $observers[$index]);
+        $this->assertTrue(1 == count($observers));
+        $this->assertInstanceOf('Closure', $observers[static::$observerIdxVal]);
+        // also tests __call() magic
+        static::$observerIdxLen = EventManager::getInstance()->onTest(
+            function($val) { static::$someStrlen = strlen($val); return $val; }
+        );
+        // reread observers as our testclass __call() code doesn't cope with reference passing
+        $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
+        $this->assertTrue(2 == count($observers));
+        $this->assertInstanceOf('Closure', $observers[static::$observerIdxLen]);
     }
 
     public function testTriggerEvent() {
+        EventManager::getInstance()->triggerEvent("test", "hahaha");
+        $this->assertTrue(static::$someValue == "hahaha");
+        $this->assertTrue(static::$someStrlen == strlen("hahaha"));
+
+        EventManager::getInstance()->triggerEvent("test", "huh");
+        $this->assertTrue(static::$someValue == "huh");
+        $this->assertTrue(static::$someStrlen == strlen("huh"));
     }
 
     public function testUnsubscribeObserver() {
+        EventManager::getInstance()->triggerEvent("test", "unsub");
+        $this->assertTrue(static::$someValue == "unsub");
+        EventManager::getInstance()->unsubscribeObserver("test", static::$observerIdxVal);
+
+        // also tests __call() magic
+        EventManager::getInstance()->eventTest("done");
+        $this->assertTrue(static::$someValue == "unsub");
+        $this->assertTrue(static::$someStrlen == strlen("done"));
+        EventManager::getInstance()->unsubscribeObserver("test", static::$observerIdxLen);
+        EventManager::getInstance()->eventTest("OK");
+        $this->assertFalse(static::$someValue == "OK");
+        $this->assertFalse(static::$someStrlen == strlen("OK"));
     }
 
+    // TODO: more specific test of __call() maybe...
 }
 
 ?>
