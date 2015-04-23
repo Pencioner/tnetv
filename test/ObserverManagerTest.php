@@ -14,8 +14,7 @@ class ResultMock {
 
     public function fetch_row() {
         if ($this->fetched < count($this->data)) {
-            ++$this->fetched;
-            return $this->data[-1 + $this->fetched];
+            return $this->data[$this->fetched++];
         }
         return NULL;
     }
