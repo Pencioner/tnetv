@@ -38,18 +38,19 @@ class EventManager {
         if ($this->isEventRegistered($eventName)) {
              $observers = & $this->getEventObservers($eventName);
              foreach ($observers as $callback) {
+
                  $eventData = call_user_func($callback, $eventData);
              }
              return $eventData;
         } else {
-             trigger_error('attempt to trigger nonregistered event', E_USER_ERROR);
+             trigger_error('attempt to trigger nonregistered event '.$eventName, E_USER_ERROR);
         }
     }
 
     public function subscribeObserver($eventName, $callback) {
         if (!$this->isEventRegistered($eventName)) {
              // warning only, subscribing will automatically register one
-             trigger_error('attempt to subscribe to nonregistered event', E_USER_WARNING);
+             trigger_error('attempt to subscribe to nonregistered event '.$eventName, E_USER_WARNING);
         }
         // return the index so the observer can be unsubscribed
         $observers = & $this->getEventObservers($eventName);
@@ -74,10 +75,10 @@ class EventManager {
 
     public function __call($methodName, $args) {
         if (0 === strpos($methodName, "on")) {
-            $eventName = strtolower(substr($methodName, 2));
+            $eventName = substr($methodName, 2);
             return $this->subscribeObserver($eventName, $args[0]);
         } elseif (0 === strpos($methodName, "event")) {
-            $eventName = strtolower(substr($methodName, 5));
+            $eventName = substr($methodName, 5);
             return $this->triggerEvent($eventName, $args[0]);
         } else {
             trigger_error("unknown method " . $methodName, E_USER_ERROR);
@@ -86,4 +87,3 @@ class EventManager {
 };
 
 ?>
-

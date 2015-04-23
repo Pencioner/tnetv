@@ -43,18 +43,18 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testRegisterEvent() {
-        EventManager::getInstance()->registerEvent("test");
-        $this->assertTrue(EventManager::getInstance()->isEventRegistered("test"));
-        $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
+        EventManager::getInstance()->registerEvent("Test");
+        $this->assertTrue(EventManager::getInstance()->isEventRegistered("Test"));
+        $observers = $this->callGetEventObservers(EventManager::getInstance(), "Test");
         $this->assertNotNull($observers);
         $this->assertEmpty($observers);
     }
 
     public function testUnregisterEvent() {
-        EventManager::getInstance()->registerEvent("test");
-        EventManager::getInstance()->unregisterEvent("test");
-        $this->assertFalse(EventManager::getInstance()->isEventRegistered("test"));
-        $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
+        EventManager::getInstance()->registerEvent("Test");
+        EventManager::getInstance()->unregisterEvent("Test");
+        $this->assertFalse(EventManager::getInstance()->isEventRegistered("Test"));
+        $observers = $this->callGetEventObservers(EventManager::getInstance(), "Test");
         $this->assertNull($observers);
     }
 
@@ -63,12 +63,12 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
     protected static $observerIdxVal;
     protected static $observerIdxLen;
     public function testSubscribeObserver() {
-        EventManager::getInstance()->registerEvent("test");
+        EventManager::getInstance()->registerEvent("Test");
         static::$observerIdxVal = EventManager::getInstance()->subscribeObserver(
-            "test",
+            "Test",
             function($val) { static::$someValue = $val; return $val; }
         );
-        $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
+        $observers = $this->callGetEventObservers(EventManager::getInstance(), "Test");
         $this->assertNotEmpty($observers);
         $this->assertTrue(1 == count($observers));
         $this->assertInstanceOf('Closure', $observers[static::$observerIdxVal]);
@@ -77,31 +77,31 @@ class EventManagerTest extends PHPUnit_Framework_TestCase {
             function($val) { static::$someStrlen = strlen($val); return $val; }
         );
         // reread observers as our testclass __call() code doesn't cope with reference passing
-        $observers = $this->callGetEventObservers(EventManager::getInstance(), "test");
+        $observers = $this->callGetEventObservers(EventManager::getInstance(), "Test");
         $this->assertTrue(2 == count($observers));
         $this->assertInstanceOf('Closure', $observers[static::$observerIdxLen]);
     }
 
     public function testTriggerEvent() {
-        EventManager::getInstance()->triggerEvent("test", "hahaha");
+        EventManager::getInstance()->triggerEvent("Test", "hahaha");
         $this->assertTrue(static::$someValue == "hahaha");
         $this->assertTrue(static::$someStrlen == strlen("hahaha"));
 
-        EventManager::getInstance()->triggerEvent("test", "huh");
+        EventManager::getInstance()->triggerEvent("Test", "huh");
         $this->assertTrue(static::$someValue == "huh");
         $this->assertTrue(static::$someStrlen == strlen("huh"));
     }
 
     public function testUnsubscribeObserver() {
-        EventManager::getInstance()->triggerEvent("test", "unsub");
+        EventManager::getInstance()->triggerEvent("Test", "unsub");
         $this->assertTrue(static::$someValue == "unsub");
-        EventManager::getInstance()->unsubscribeObserver("test", static::$observerIdxVal);
+        EventManager::getInstance()->unsubscribeObserver("Test", static::$observerIdxVal);
 
         // also tests __call() magic
         EventManager::getInstance()->eventTest("done");
         $this->assertTrue(static::$someValue == "unsub");
         $this->assertTrue(static::$someStrlen == strlen("done"));
-        EventManager::getInstance()->unsubscribeObserver("test", static::$observerIdxLen);
+        EventManager::getInstance()->unsubscribeObserver("Test", static::$observerIdxLen);
         EventManager::getInstance()->eventTest("OK");
         $this->assertFalse(static::$someValue == "OK");
         $this->assertFalse(static::$someStrlen == strlen("OK"));

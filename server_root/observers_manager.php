@@ -24,14 +24,15 @@ class ObserverManager {
         while ($row = $result->fetch_row()) {
             list($singletonClassname, $methodName, $eventName) = $row;
             if ($singletonClassname) { // singleton callback
-                $callback = function($eventData) use ($singletonClassname, $methodName) {
+                $callback = function($data) use ($singletonClassname, $methodName) {
                     require('observers/' . strtolower($singletonClassname) . '.php');
-                    return call_user_func(array($singletonClassname, $methodName), $eventData);
+                    $instance = $singletonClassname::getInstance();
+                    return call_user_func(array($instance, $methodName), $data);
                 };
             } else { // simple method callback
-                $callback = function($eventData) use ($methodName) {
+                $callback = function($data) use ($methodName) {
                     require('observers/' . strtolower($methodName) . '.php');
-                    return call_user_func($methodName, $eventData);
+                    return call_user_func($methodName, $data);
                 };
             }
             $evManager->registerEvent($eventName);
@@ -50,4 +51,3 @@ class ObserverManager {
 };
 
 ?>
-
