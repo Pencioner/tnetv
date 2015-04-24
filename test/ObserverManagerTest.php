@@ -54,7 +54,11 @@ class ObserverManagerTest extends PHPUnit_Framework_TestCase {
     }
 
     public function testObserversAreWorking() {
+        // trigger the same ones second time to make sure it is kind od idempotent
         $this->assertSame(42, EventManager::getInstance()->triggerEvent("ObserverTest2", 42));
+        $this->assertSame(42, EventManager::getInstance()->triggerEvent("ObserverTest2", 42));
+
+        $this->assertSame(EventManager::getInstance()->eventObserverTest("somestring"), "sOMESTRING");
         $this->assertSame(EventManager::getInstance()->eventObserverTest("somestring"), "sOMESTRING");
     }
 

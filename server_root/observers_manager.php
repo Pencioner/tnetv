@@ -25,15 +25,21 @@ class ObserverManager {
             list($singletonClassname, $methodName, $eventName) = $row;
             if ($singletonClassname) { // singleton callback
                 $callback = function($data) use ($singletonClassname, $methodName) {
-                    set_include_path(get_include_path() . PATH_SEPARATOR . './test'); // FIXME TODO workaround for tests, do it another way
-                    require('observers/' . strtolower($singletonClassname) . '.php');
+                    if (!isset(static::$observers["S" . $singletonClassname . $methodName])) {
+                        set_include_path(get_include_path() . PATH_SEPARATOR . './test'); // FIXME TODO workaround for tests, do it another way
+                        require('observers/' . strtolower($singletonClassname) . '.php');
+                        static::$observers["S" . $singletonClassname . $methodName] = true;
+                    }
                     $instance = $singletonClassname::getInstance();
                     return call_user_func(array($instance, $methodName), $data);
                 };
             } else { // simple method callback
                 $callback = function($data) use ($methodName) {
-                    set_include_path(get_include_path() . PATH_SEPARATOR . './test'); // FIXME TODO workaround for tests, do it another way
-                    require('observers/' . strtolower($methodName) . '.php');
+                    if (!isset(static::$observers["M" . $methodName])) {
+                        set_include_path(get_include_path() . PATH_SEPARATOR . './test'); // FIXME TODO workaround for tests, do it another way
+                        require('observers/' . strtolower($methodName) . '.php');
+                        static::$observers["M" . $methodName] = true;
+                    }
                     return call_user_func($methodName, $data);
                 };
             }
