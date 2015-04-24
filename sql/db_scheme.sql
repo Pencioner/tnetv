@@ -1,7 +1,3 @@
-CREATE DATABASE IF NOT EXISTS `comments`;
-
-USE `comments`;
-
 CREATE TABLE IF NOT EXISTS `event_manager_observers` (
   `o_id`                   INTEGER NOT NULL AUTO_INCREMENT,
   `o_singleton_classname`  VARCHAR(256) DEFAULT NULL,
