@@ -1,0 +1,74 @@
+### THIS INSTALL FILE IS NOT JUST REFERENCE
+### this is actually bash script, you can configure the variables below and run it
+
+###     SETUP CONFIGURATION VALUES
+### revise and change as needed
+
+TNETV_PORT=8580 # example port, change to desired one if this is taken
+TNETV_SRVNAME=localhost # also you may add some host in /etc/hosts and change this as well
+TNETV_DOCROOT=/var/www  # deployment folder
+TNETV_NAME=tnetv  # apache config name
+
+MYSQL_ROOT_LOGIN=root
+MYSQL_ROOT_PWD=     # leave empty if you want it to be entered interactively
+MYSQL_LOGIN=tnetv
+MYSQL_PWD=verysecret
+MYSQL_DB=comments
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+
+# Install required packages:
+
+sudo apt-get install apache2 php5 mysql-server mysql-client php5-mysqlnd phpunit git
+
+cd $TNETV_DOCROOT
+sudo git clone https://github.com/Pencioner/tnetv.git
+cd tnetv
+sudo git checkout master
+
+if [ ! -e phpunit.xml -o ! phpunit ]; then
+  echo Getting source or unit tests failed, exiting...
+  exit 1
+fi
+
+# prepare config
+sudo sed -i "
+  s/\(\$db_host\s*=\s*\).*$/\1\"${MYSQL_HOST}\";/;
+  s/\(\$db_port\s*=\s*\).*$/\1\"${MYSQL_PORT}\";/;
+  s/\(\$db_user\s*=\s*\).*$/\1\"${MYSQL_LOGIN}\";/;
+  s/\(\$db_pass\s*=\s*\).*$/\1\"${MYSQL_PWD}\";/;
+  s/\(\$db_name\s*=\s*\).*$/\1\"${MYSQL_DB}\";/;
+" ./server_root/config.php
+
+# prepare mysql db
+_MYSQL_ROOT_CMD="mysql -u$MYSQL_ROOT_LOGIN -p$MYSQL_ROOT_PWD -h$MYSQL_HOST -P$MYSQL_PORT"
+_MYSQL_CMD="mysql -u$MYSQL_LOGIN -p$MYSQL_PWD -h$MYSQL_HOST -P$MYSQL_PORT $MYSQL_DB"
+
+echo "
+CREATE DATABASE ${MYSQL_DB};
+GRANT ALL ON ${MYSQL_DB}.* TO '${MYSQL_LOGIN}' IDENTIFIED BY '${MYSQL_PWD}';" | $_MYSQL_ROOT_CMD
+
+cat ./sql/db_scheme.sql | $_MYSQL_CMD
+cat ./sql/db_seed_data.sql | $_MYSQL_CMD
+
+# Configure the virtual host:
+
+echo "
+Listen ${TNETV_PORT}
+
+<VirtualHost *:${TNETV_PORT}>
+	ServerName ${TNETV_SRVNAME}
+
+	ServerAdmin webmaster@${TNETV_SRVNAME}
+	DocumentRoot ${TNETV_DOCROOT}/tnetv/server_root
+
+	ErrorLog \${APACHE_LOG_DIR}/error.log
+	CustomLog \${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>" | sudo tee /etc/apache2/sites-available/${TNETV_NAME}.conf
+sudo ln -sf /etc/apache2/sites-available/${TNETV_NAME}.conf /etc/apache2/sites-enabled/
+
+# restart apache
+sudo service apache2 restart
+
+
