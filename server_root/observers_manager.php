@@ -25,12 +25,14 @@ class ObserverManager {
             list($singletonClassname, $methodName, $eventName) = $row;
             if ($singletonClassname) { // singleton callback
                 $callback = function($data) use ($singletonClassname, $methodName) {
+                    set_include_path(get_include_path() . PATH_SEPARATOR . './test'); // FIXME TODO workaround for tests, do it another way
                     require('observers/' . strtolower($singletonClassname) . '.php');
                     $instance = $singletonClassname::getInstance();
                     return call_user_func(array($instance, $methodName), $data);
                 };
             } else { // simple method callback
                 $callback = function($data) use ($methodName) {
+                    set_include_path(get_include_path() . PATH_SEPARATOR . './test'); // FIXME TODO workaround for tests, do it another way
                     require('observers/' . strtolower($methodName) . '.php');
                     return call_user_func($methodName, $data);
                 };
